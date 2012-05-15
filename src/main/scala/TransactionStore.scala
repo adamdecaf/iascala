@@ -12,8 +12,19 @@ object TransactionStore {
   def transactionCacheReader: Reader[Configuration, DataService[Transaction]] =
     Reader((c: Configuration) => TransactionStore(RedisTransactionStore(c)))
 
+/*
   def multiWriteReader: Reader[Configuration, MultiWriteOperation[Transaction]] = for {
     transactionService <- transactionServiceReader
     cacheService <- transactionCacheReader
   } yield (MultiWriteOperation(Seq(transactionService, cacheService)))
+*/
+
+  def multiWriteReader: Reader[Configuration, MultiWriteOperation[Transaction]] = {
+    transactionServiceReader.flatMap((
+      transactionService => transactionCacheReader.map(
+        cacheService => MultiWriteOperation(Seq(transactionService, cacheService))
+      )
+    ))
+  }
+
 }
